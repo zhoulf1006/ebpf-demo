@@ -24,7 +24,7 @@ INCLUDES := -I$(OUTPUT) -I../libbpf/include/uapi -I$(dir $(VMLINUX))
 CFLAGS := -g -Wall
 ALL_LDFLAGS := $(LDFLAGS) $(EXTRA_LDFLAGS)
 
-APPS = solisten
+APPS = solisten socket_redirect
 
 CARGO ?= $(shell which cargo)
 ifeq ($(strip $(CARGO)),)
