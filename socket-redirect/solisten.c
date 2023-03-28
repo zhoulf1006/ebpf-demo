@@ -18,10 +18,10 @@
 
 #include <bpf/libbpf.h>
 #include <bpf/bpf.h>
+#include <bpf/bpf_helpers.h>
+#include "trace_helpers.h"
 #include "solisten.h"
 #include "solisten.skel.h"
-#include "bpf_helpers.h"
-#include "trace_helpers.h"
 
 #define PERF_BUFFER_PAGES       16
 #define PERF_POLL_TIMEOUT_MS    100
