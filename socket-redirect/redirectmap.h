@@ -2,8 +2,9 @@
 #ifndef __REDIRECTMAP_H
 #define __REDIRECTMAP_H
 
-#include <linux/in.h>
-#include <linux/types.h>
+#include "vmlinux.h"
+// #include <linux/in.h>
+// #include <linux/types.h>
 
 struct sock_key {
 __u32 src_ip;
