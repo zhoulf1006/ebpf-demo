@@ -16,8 +16,8 @@
 #include <time.h>
 #include <unistd.h>
 
-#include <bpf/libbpf.h>
 #include <bpf/bpf.h>
+#include <bpf/libbpf.h>
 #include <bpf/bpf_helpers.h>
 #include "trace_helpers.h"
 #include "solisten.h"
