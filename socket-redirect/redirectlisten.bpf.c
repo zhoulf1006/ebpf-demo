@@ -5,32 +5,29 @@
 #include "redirectmap.h"
 
 struct {
-__uint(type, BPF_MAP_TYPE_SOCKMAP);
-__type(key, struct sock_key);
-__type(value, struct sock_info);
-__uint(max_entries, 1024);
+	__uint(type, BPF_MAP_TYPE_SOCKMAP);
+	__type(key, struct sock_key);
+	__type(value, struct sock_info);
+	__uint(max_entries, 1024);
 } socks SEC(".maps");
 
-SEC("kprobe/inet_csk_accept")
-int kprobe__inet_csk_accept(struct pt_regs *ctx)
+SEC("kprobe/tcp_v4_listen")
+int kprobe__tcp_v4_listen(struct pt_regs *ctx)
 {
-struct socket *sock = (struct socket *)PT_REGS_PARM1(ctx);
-struct sock_key key = {};
-struct sock_info info = {};
+    struct bpf_sock_ops *skops = NULL;
+    struct bpf_sock_tuple key = {};
+    struct bpf_sock_tuple_info info = {};
 
-if (!sock->sk)
-	return 0;
+    skops = (struct bpf_sock_ops *)PT_REGS_PARM1(ctx);
+    bpf_memcpy(&key.src_ip, &skops->local_ip, sizeof(key.src_ip));
+    bpf_memcpy(&key.src_port, &skops->local_port, sizeof(key.src_port));
 
-key.src_ip = 0;
-key.dst_ip = sk->__sk_common.skc_daddr;
-key.src_port = 0;
-key.dst_port = sk->__sk_common.skc_dport;
+    info.local_storage = &skops->local_storage;
+    info.peer_storage = &skops->peer_storage;
 
-info.sock_addr = (unsigned long)sock;
+    bpf_sock_map_update(&socks, &key, &info, BPF_ANY);
 
-bpf_sock_map_update(&socks, &key, &info, BPF_ANY);
-
-return 0;
+    return 0;
 }
 
 char LICENSE[] SEC("license") = "Dual BSD/GPL";
