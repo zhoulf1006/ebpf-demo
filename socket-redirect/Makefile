@@ -36,6 +36,24 @@ APPS += $(BZS_APPS)
 ALL_LDFLAGS += -lrt -ldl -lpthread -lm
 endif
 
+COMMON_OBJ = \
+	$(OUTPUT)/trace_helpers.o \
+	# $(OUTPUT)/syscall_helpers.o \
+	# $(OUTPUT)/errno_helpers.o \
+	# $(OUTPUT)/map_helpers.o \
+	# $(OUTPUT)/uprobe_helpers.o \
+	# $(OUTPUT)/btf_helpers.o \
+	# $(OUTPUT)/compat.o \
+	$(if $(ENABLE_MIN_CORE_BTFS),$(OUTPUT)/min_core_btf_tar.o) \
+	#
+
+ifeq ($(USE_BLAZESYM),1)
+COMMON_OBJ += \
+	$(OUTPUT)/libblazesym.a \
+	$(OUTPUT)/blazesym.h \
+	#
+endif
+
 # Get Clang's default includes on this system. We'll explicitly add these dirs
 # to the includes list when compiling with `-target bpf` because otherwise some
 # architecture-specific dirs will be "missing" on some architectures/distros -
@@ -128,7 +146,7 @@ $(patsubst %,$(OUTPUT)/%.o,$(BZS_APPS)): $(LIBBLAZESYM_HEADER)
 $(BZS_APPS): $(LIBBLAZESYM_OBJ)
 
 # Build application binary
-$(APPS): %: $(OUTPUT)/%.o $(LIBBPF_OBJ) | $(OUTPUT)
+$(APPS): %: $(OUTPUT)/%.o $(COMMON_OBJ) $(LIBBPF_OBJ) | $(OUTPUT)
 	$(call msg,BINARY,$@)
 	$(Q)$(CC) $(CFLAGS) $^ $(ALL_LDFLAGS) -lelf -lz -o $@
 
