@@ -38,10 +38,10 @@ endif
 
 COMMON_OBJ = \
 	$(OUTPUT)/trace_helpers.o \
+	$(OUTPUT)/uprobe_helpers.o \
 	# $(OUTPUT)/syscall_helpers.o \
 	# $(OUTPUT)/errno_helpers.o \
 	# $(OUTPUT)/map_helpers.o \
-	# $(OUTPUT)/uprobe_helpers.o \
 	# $(OUTPUT)/btf_helpers.o \
 	# $(OUTPUT)/compat.o \
 	$(if $(ENABLE_MIN_CORE_BTFS),$(OUTPUT)/min_core_btf_tar.o) \
