@@ -20,7 +20,7 @@
 #include <bpf/bpf.h>
 #include "solisten.h"
 #include "solisten.skel.h"
-#include "btf_helpers.h"
+#include "bpf_helpers.h"
 #include "trace_helpers.h"
 
 #define PERF_BUFFER_PAGES       16
