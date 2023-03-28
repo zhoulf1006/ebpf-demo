@@ -18,7 +18,6 @@
 
 #include <bpf/bpf.h>
 #include <bpf/libbpf.h>
-#include <bpf/bpf_helpers.h>
 #include "trace_helpers.h"
 #include "solisten.h"
 #include "solisten.skel.h"
