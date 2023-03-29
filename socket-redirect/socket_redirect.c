@@ -31,7 +31,7 @@ void cleanup(void) {
     }
 }
 
-static int handle_perf_event(void *ctx, int cpu, void *data, __u32 data_sz) {
+static enum bpf_perf_event_ret handle_perf_event(void *ctx, int cpu, void *data, __u32 data_sz) {
     struct connection_info *conn_info = data;
 
     printf("Connection: %u.%u.%u.%u:%u -> %u.%u.%u.%u:%u\n",
@@ -90,13 +90,17 @@ int main(int argc, char *argv[]) {
     }
 
     // Set up perf buffer options
-    struct perf_buffer_opts pb_opts = {
+    struct perf_buffer_params pb_params = {
+        .attr = {
+            .sample_type = PERF_TYPE_RAW,
+            .wakeup_events = 1,
+        },
         .sample_cb = handle_perf_event,
         .lost_cb = handle_perf_event_lost,
     };
 
     // Set up the perf buffer
-    struct perf_buffer *pb = perf_buffer__new(bpf_map__fd(skel->maps.perf_event_map), 16, &pb_opts);
+    struct perf_buffer *pb = perf_buffer__new(bpf_map__fd(skel->maps.perf_event_map), 16, &pb_params);
     if (!pb) {
         fprintf(stderr, "Failed to create perf buffer\n");
         return 1;
