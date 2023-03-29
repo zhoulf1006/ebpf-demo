@@ -46,7 +46,6 @@ SEC("sk_msg")
 int sendmsg_prog(struct sk_msg_md *msg) {
     struct sock_key key = {};
     struct sock *sk;
-    __u32 key_hash;
 
     key.family = msg->family;
     key.sip4 = msg->local_ip4;
@@ -54,17 +53,12 @@ int sendmsg_prog(struct sk_msg_md *msg) {
     key.dip4 = msg->remote_ip4;
     key.dport = msg->remote_port;
 
-    // Compute a hash of the sock_key structure
-    key_hash = bpf_get_hash_recalc(&key, sizeof(key));
-
     sk = bpf_map_lookup_elem(&sock_ops_map, &key);
     if (!sk)
         return SK_PASS;
 
-    // Pass the struct __sk_buff pointer to bpf_sk_redirect_map
-    return bpf_sk_redirect_map((struct __sk_buff *)msg, &sock_ops_map, key_hash, BPF_F_INGRESS);
+    return bpf_sk_redirect_map(msg, &sock_ops_map, BPF_SK_REDIRECT_MAP_GET_HASH(&key), BPF_F_INGRESS);
 }
-
 
 char _license[] SEC("license") = "GPL";
 __u32 _version SEC("version") = 1;
