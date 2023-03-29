@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <bpf/libbpf.h>
 #include <bpf/bpf.h>
+#include <bpf/ring_buffer.h>
 #include "socket_redirect.h"
 
 #include "socket_redirect.skel.h"
@@ -31,20 +32,15 @@ void cleanup(void) {
     }
 }
 
-static enum bpf_perf_event_ret handle_perf_event(void *ctx, int cpu, void *data, __u32 data_sz) {
-    struct connection_info *conn_info = data;
+static int handle_ring_buffer_event(void *ctx, void *data, size_t len) {
+    struct conn_info *ci = (struct conn_info *)data;
 
-    printf("Connection: %u.%u.%u.%u:%u -> %u.%u.%u.%u:%u\n",
-           conn_info->sip4 >> 24, (conn_info->sip4 >> 16) & 0xff, (conn_info->sip4 >> 8) & 0xff, conn_info->sip4 & 0xff,
-           conn_info->sport,
-           conn_info->dip4 >> 24, (conn_info->dip4 >> 16) & 0xff, (conn_info->dip4 >> 8) & 0xff, conn_info->dip4 & 0xff,
-           conn_info->dport);
+    printf("Socket: family=%d, src=%d.%d.%d.%d:%d, dst=%d.%d.%d.%d:%d\n",
+           ci->family,
+           ci->sip4 & 0xff, (ci->sip4 >> 8) & 0xff, (ci->sip4 >> 16) & 0xff, (ci->sip4 >> 24) & 0xff, ci->sport,
+           ci->dip4 & 0xff, (ci->dip4 >> 8) & 0xff, (ci->dip4 >> 16) & 0xff, (ci->dip4 >> 24) & 0xff, ci->dport);
 
     return 0;
-}
-
-static void handle_perf_event_lost(void *ctx, int cpu, __u64 lost_cnt) {
-    fprintf(stderr, "Lost %llu perf events on CPU %d\n", lost_cnt, cpu);
 }
 
 int main(int argc, char *argv[]) {
@@ -89,32 +85,25 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // Set up perf buffer options
-    struct perf_buffer_params pb_params = {
-        .attr = {
-            .sample_type = PERF_TYPE_RAW,
-            .wakeup_events = 1,
-        },
-        .sample_cb = handle_perf_event,
-        .lost_cb = handle_perf_event_lost,
-    };
-
-    // Set up the perf buffer
-    struct perf_buffer *pb = perf_buffer__new(bpf_map__fd(skel->maps.perf_event_map), 16, &pb_params);
-    if (!pb) {
-        fprintf(stderr, "Failed to create perf buffer\n");
+    struct ring_buffer *rb = ring_buffer__new(bpf_map__fd(skel->maps.ring_buffer_map),
+                                               handle_ring_buffer_event, NULL, NULL);
+    if (!rb) {
+        fprintf(stderr, "Failed to create ring buffer\n");
         return 1;
     }
 
     printf("Successfully attached BPF program to cgroup\n");
 
     while (!exiting) {
-        perf_buffer__poll(pb, 100);
+        int err = ring_buffer__poll(rb, 100 /* timeout, ms */);
+        if (err < 0 && errno != EINTR) {
+            fprintf(stderr, "Error polling ring buffer: %d\n", err);
+            break;
+        }
         sleep(1);
     }
 
-    // Clean up the perf buffer
-    perf_buffer__free(pb);
+    ring_buffer__free(rb);
 
     return 0;
 }
