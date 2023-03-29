@@ -12,10 +12,9 @@ struct {
 } sock_ops_map SEC(".maps");
 
 struct {
-    __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
-    __uint(key_size, sizeof(__u32));
-    __uint(value_size, sizeof(__u32));
-} perf_event_map SEC(".maps");
+    __uint(type, BPF_MAP_TYPE_RINGBUF);
+    __uint(max_entries, 1 << 24);
+} ring_buffer_map SEC(".maps");
 
 static __always_inline void output_connection_info(void *ctx, struct sock_key *key) {
     struct connection_info conn_info = {};
@@ -24,8 +23,7 @@ static __always_inline void output_connection_info(void *ctx, struct sock_key *k
     conn_info.sport = key->sport;
     conn_info.dport = key->dport;
 
-    __u32 cpu = bpf_get_smp_processor_id();
-    bpf_perf_event_output(ctx, &perf_event_map, cpu, &conn_info, sizeof(conn_info));
+    bpf_ringbuf_output(&ring_buffer_map, &conn_info, sizeof(conn_info), BPF_RB_FORCE_WAKEUP);
 }
 
 SEC("sockops")

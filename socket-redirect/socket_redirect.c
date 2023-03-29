@@ -32,7 +32,7 @@ void cleanup(void) {
 }
 
 static int handle_ring_buffer_event(void *ctx, void *data, size_t len) {
-    struct conn_info *ci = (struct conn_info *)data;
+    struct connection_info *ci = (struct connection_info *)data;
 
     printf("Socket: family=%d, src=%d.%d.%d.%d:%d, dst=%d.%d.%d.%d:%d\n",
            ci->family,
