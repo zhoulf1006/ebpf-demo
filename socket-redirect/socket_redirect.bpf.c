@@ -52,16 +52,16 @@ int sock_map_update(struct bpf_sock_ops *skops) {
 
     bpf_trace_printk("sockops BPF_CORE_READ finish\n", sizeof("sockops BPF_CORE_READ finish\n"));
 
-    if (op == BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB || op == BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB) {
-        bpf_sock_hash_update(skops, &sock_ops_map, &key, BPF_NOEXIST);
-        output_connection_info(skops, &key);
-    } else if (op == BPF_SOCK_OPS_STATE_CB) {
-        int state = skops->args[0];
+    // if (op == BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB || op == BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB) {
+    //     bpf_sock_hash_update(skops, &sock_ops_map, &key, BPF_NOEXIST);
+    //     output_connection_info(skops, &key);
+    // } else if (op == BPF_SOCK_OPS_STATE_CB) {
+    //     int state = skops->args[0];
 
-        if (state == TCP_CLOSE) {
-            bpf_map_delete_elem(&sock_ops_map, &key);
-        }
-    }
+    //     if (state == TCP_CLOSE) {
+    //         bpf_map_delete_elem(&sock_ops_map, &key);
+    //     }
+    // }
 
     return 0;
 }
