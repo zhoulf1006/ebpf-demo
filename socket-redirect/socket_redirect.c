@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Use bpf_program__fd to get the file descriptor for sendmsg_prog change BPF_CGROUP_INET_SOCK_CREATE -> BPF_SOCK_OPS
-    err = bpf_prog_attach(bpf_program__fd(skel->progs.sendmsg_prog), cgroup_fd, BPF_SOCK_OPS, 0);
+    err = bpf_prog_attach(bpf_program__fd(skel->progs.sendmsg_prog), cgroup_fd, BPF_CGROUP_INET_SOCK_CREATE, 0);
     if (err) {
         perror("Failed to attach BPF program to cgroup");
         return 1;
