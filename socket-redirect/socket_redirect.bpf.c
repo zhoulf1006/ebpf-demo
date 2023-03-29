@@ -72,25 +72,25 @@ int sock_map_update(struct bpf_sock_ops *skops) {
     return 0;
 }
 
-// SEC("sk_msg")
-// int sendmsg_prog(struct sk_msg_md *msg) {
-//     struct sock_key key = {};
-//     struct sock *sk;
+SEC("sk_msg")
+int sendmsg_prog(struct sk_msg_md *msg) {
+    struct sock_key key = {};
+    struct sock *sk;
 
-//     key.family = msg->family;
-//     key.sip4 = msg->local_ip4;
-//     key.sport = msg->local_port;
-//     key.dip4 = msg->remote_ip4;
-//     key.dport = msg->remote_port;
+    key.family = msg->family;
+    key.sip4 = msg->local_ip4;
+    key.sport = msg->local_port;
+    key.dip4 = msg->remote_ip4;
+    key.dport = msg->remote_port;
 
-//     sk = bpf_map_lookup_elem(&sock_ops_map, &key);
-//     if (!sk) {
-//         output_connection_info(msg, &key);
-//         return SK_PASS;
-//     }
+    sk = bpf_map_lookup_elem(&sock_ops_map, &key);
+    if (!sk) {
+        output_connection_info(msg, &key);
+        return SK_PASS;
+    }
 
-//     return bpf_sk_redirect_map((struct __sk_buff *)msg->sk, &sock_ops_map, (unsigned long)&key, BPF_F_INGRESS);
-// }
+    return bpf_sk_redirect_map((struct __sk_buff *)msg->sk, &sock_ops_map, (unsigned long)&key, BPF_F_INGRESS);
+}
 
 char _license[] SEC("license") = "GPL";
 __u32 _version SEC("version") = 1;
