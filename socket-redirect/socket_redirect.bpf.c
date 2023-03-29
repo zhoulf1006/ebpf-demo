@@ -42,21 +42,12 @@ SEC("sk_msg")
 int sendmsg_prog(struct sk_msg_md *msg) {
     struct sock_key key = {};
     struct sock *sk;
-    struct sockaddr_in *addr;
-    void *msg_name;
 
     key.family = msg->family;
-    key.sip4 = msg->src_ip4;
-    key.sport = msg->src_port;
-
-    msg_name = (void *)(long)msg->msg_name;
-    if (msg_name) {
-        addr = (struct sockaddr_in *)msg_name;
-        key.dip4 = BPF_CORE_READ(addr, sin_addr.s_addr);
-        key.dport = BPF_CORE_READ(addr, sin_port);
-    } else {
-        return SK_PASS;
-    }
+    key.sip4 = msg->local_ip4;
+    key.sport = msg->local_port;
+    key.dip4 = msg->remote_ip4;
+    key.dport = msg->remote_port;
 
     sk = bpf_map_lookup_elem(&sock_ops_map, &key);
     if (!sk)
