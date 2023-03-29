@@ -17,7 +17,8 @@ int sock_map_update(struct bpf_sock_ops *skops) {
     struct sock *sk;
     int op;
 
-    sk = (struct sock *)skops->sk;
+    // sk = (struct sock *)skops->sk;
+    sk = BPF_CORE_READ(skops, sk);
     if (!sk)
         return 0;
 
