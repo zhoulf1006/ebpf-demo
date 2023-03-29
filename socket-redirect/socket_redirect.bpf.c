@@ -38,20 +38,22 @@ int sock_map_update(struct bpf_sock_ops *skops) {
     return 0;
 }
 
-SEC("cgroup/sendmsg")
-int sendmsg_prog(struct bpf_sock_addr *ctx) {
+SEC("sk_msg")
+int sendmsg_prog(struct sk_msg_md *msg) {
     struct sock_key key = {};
-    struct bpf_sock *sk;
+    struct sock *sk;
+    struct sockaddr_in *addr;
     void *msg_name;
 
-    key.sip4 = ctx->user_ip4;
-    key.family = ctx->family;
-    key.sport = ctx->user_port;
+    key.family = msg->family;
+    key.sip4 = msg->src_ip4;
+    key.sport = msg->src_port;
 
-    msg_name = BPF_CORE_READ(ctx->msg, msg_name);
+    msg_name = (void *)(long)msg->msg_name;
     if (msg_name) {
-        key.dip4 = BPF_CORE_READ((struct sockaddr_in *)msg_name, sin_addr.s_addr);
-        key.dport = BPF_CORE_READ((struct sockaddr_in *)msg_name, sin_port);
+        addr = (struct sockaddr_in *)msg_name;
+        key.dip4 = BPF_CORE_READ(addr, sin_addr.s_addr);
+        key.dport = BPF_CORE_READ(addr, sin_port);
     } else {
         return SK_PASS;
     }
@@ -60,7 +62,7 @@ int sendmsg_prog(struct bpf_sock_addr *ctx) {
     if (!sk)
         return SK_PASS;
 
-    return bpf_sk_redirect_map(ctx, &sock_ops_map, &key, BPF_F_INGRESS);
+    return bpf_sk_redirect_map(msg, &sock_ops_map, &key, BPF_F_INGRESS);
 }
 
 char _license[] SEC("license") = "GPL";
