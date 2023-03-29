@@ -18,6 +18,7 @@ struct {
 
 static __always_inline void output_connection_info(void *ctx, struct sock_key *key) {
     struct connection_info conn_info = {};
+    conn_info.family = key->family;
     conn_info.sip4 = key->sip4;
     conn_info.dip4 = key->dip4;
     conn_info.sport = key->sport;

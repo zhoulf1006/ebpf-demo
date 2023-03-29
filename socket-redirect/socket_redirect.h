@@ -12,6 +12,7 @@ struct sock_key {
 struct connection_info {
     __u32 sip4;
     __u32 dip4;
+    __u32 family;
     __u16 sport;
     __u16 dport;
 };
