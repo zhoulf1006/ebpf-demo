@@ -2,7 +2,6 @@
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_core_read.h>
 #include <bpf/bpf_tracing.h>
-#include <bpf/bpf_endian.h>
 #include "socket_redirect.h"
 
 struct {
@@ -32,8 +31,8 @@ int sock_map_update(struct bpf_sock_ops *skops) {
 
     if (op == BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB || op == BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB) {
         bpf_sock_hash_update(skops, &sock_ops_map, &key, BPF_NOEXIST);
-    } else if (op == BPF_SOCK_OPS_TCP_CLOSE_CB) {
-        bpf_sock_hash_delete(&sock_ops_map, &key);
+    } else if (op == BPF_SOCK_OPS_TCP_CLOSE) {
+        bpf_sock_hash_del(&sock_ops_map, &key);
     }
 
     return 0;
@@ -43,16 +42,23 @@ SEC("cgroup/sendmsg")
 int sendmsg_prog(struct bpf_sock_addr *ctx) {
     struct sock_key key = {};
     struct bpf_sock *sk;
+    void *msg_name;
 
     key.sip4 = ctx->user_ip4;
-    key.dip4 = ctx->user_dst_ip4;
     key.family = ctx->family;
     key.sport = ctx->user_port;
-    key.dport = ctx->user_dst_port;
+
+    msg_name = BPF_CORE_READ(ctx->msg, msg_name);
+    if (msg_name) {
+        key.dip4 = BPF_CORE_READ((struct sockaddr_in *)msg_name, sin_addr.s_addr);
+        key.dport = BPF_CORE_READ((struct sockaddr_in *)msg_name, sin_port);
+    } else {
+        return SK_PASS;
+    }
 
     sk = bpf_map_lookup_elem(&sock_ops_map, &key);
     if (!sk)
-        return BPF_SK_PASS;
+        return SK_PASS;
 
     return bpf_sk_redirect_map(ctx, &sock_ops_map, &key, BPF_F_INGRESS);
 }
