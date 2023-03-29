@@ -8,7 +8,6 @@
 #include <stdbool.h>
 #include <bpf/libbpf.h>
 #include <bpf/bpf.h>
-#include <bpf/perf_buffer.h>
 
 #include "socket_redirect.skel.h"
 
