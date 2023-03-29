@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    err = bpf_prog_attach(skel->progs.handle_sock_addr, cgroup_fd, BPF_CGROUP_INET_SOCK_CREATE, 0);
+    err = bpf_prog_attach(skel->progs.sendmsg_prog, cgroup_fd, BPF_CGROUP_INET_SOCK_CREATE, 0);
     if (err) {
         perror("Failed to attach BPF program to cgroup");
         return 1;
