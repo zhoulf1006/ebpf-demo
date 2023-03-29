@@ -80,7 +80,5 @@ int sendmsg_prog(struct sk_msg_md *msg) {
     return bpf_sk_redirect_map((struct __sk_buff *)msg->sk, &sock_ops_map, (unsigned long)&key, BPF_F_INGRESS);
 }
 
-char _license[]
-
 char _license[] SEC("license") = "GPL";
 __u32 _version SEC("version") = 1;
