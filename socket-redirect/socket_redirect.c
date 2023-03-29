@@ -71,18 +71,18 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    cgroup_fd = open(argv[1], O_DIRECTORY);
-    if (cgroup_fd < 0) {
-        perror("Failed to open cgroup");
-        return 1;
-    }
+    // cgroup_fd = open(argv[1], O_DIRECTORY);
+    // if (cgroup_fd < 0) {
+    //     perror("Failed to open cgroup");
+    //     return 1;
+    // }
 
-    // Use bpf_program__fd to get the file descriptor for sendmsg_prog change BPF_CGROUP_INET_SOCK_CREATE -> BPF_SOCK_OPS
-    err = bpf_prog_attach(bpf_program__fd(skel->progs.sendmsg_prog), cgroup_fd, BPF_CGROUP_INET_SOCK_CREATE, 0);
-    if (err) {
-        perror("Failed to attach BPF program to cgroup");
-        return 1;
-    }
+    // // Use bpf_program__fd to get the file descriptor for sendmsg_prog change BPF_CGROUP_INET_SOCK_CREATE -> BPF_SOCK_OPS
+    // err = bpf_prog_attach(bpf_program__fd(skel->progs.sendmsg_prog), cgroup_fd, BPF_CGROUP_INET_SOCK_CREATE, 0);
+    // if (err) {
+    //     perror("Failed to attach BPF program to cgroup");
+    //     return 1;
+    // }
 
     struct ring_buffer *rb = ring_buffer__new(bpf_map__fd(skel->maps.ring_buffer_map),
                                                handle_ring_buffer_event, NULL, NULL);
