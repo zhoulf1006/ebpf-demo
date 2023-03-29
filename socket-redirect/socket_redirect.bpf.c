@@ -59,9 +59,8 @@ int sendmsg_prog(struct sk_msg_md *msg) {
         return SK_PASS;
 
     key_hash = (__u32)(unsigned long)&key;
-    return bpf_sk_redirect_map(msg->sk, &sock_ops_map, key_hash, BPF_F_INGRESS);
+    return bpf_sk_redirect_map((struct __sk_buff *)msg->sk, &sock_ops_map, key_hash, BPF_F_INGRESS);
 }
-
 
 char _license[] SEC("license") = "GPL";
 __u32 _version SEC("version") = 1;
