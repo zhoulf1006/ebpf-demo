@@ -44,7 +44,7 @@ int sock_map_update(struct bpf_sock_ops *skops) {
 
     bpf_trace_printk("sockops op finish\n", sizeof("sockops op finish\n"));
 
-    key.family = BPF_CORE_READ(sk, __sk_common.skc_family);
+    // key.family = BPF_CORE_READ(sk, __sk_common.skc_family);
     // key.sip4 = BPF_CORE_READ(sk, __sk_common.skc_rcv_saddr);
     // key.dip4 = BPF_CORE_READ(sk, __sk_common.skc_daddr);
     // key.sport = BPF_CORE_READ(sk, __sk_common.skc_num);
