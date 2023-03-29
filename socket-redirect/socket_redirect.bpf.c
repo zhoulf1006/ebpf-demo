@@ -33,17 +33,24 @@ int sock_map_update(struct bpf_sock_ops *skops) {
     struct sock *sk;
     int op;
 
+    bpf_trace_printk("sockops init finish\n", sizeof("sockops init finish\n"));
     sk = (struct sock *)skops->sk;
     if (!sk)
         return 0;
 
+    bpf_trace_printk("sockops sk finish\n", sizeof("sockops sk finish\n"));
+
     op = (int)skops->op;
+
+    bpf_trace_printk("sockops op finish\n", sizeof("sockops op finish\n"));
 
     key.family = BPF_CORE_READ(sk, __sk_common.skc_family);
     key.sip4 = BPF_CORE_READ(sk, __sk_common.skc_rcv_saddr);
     key.dip4 = BPF_CORE_READ(sk, __sk_common.skc_daddr);
     key.sport = BPF_CORE_READ(sk, __sk_common.skc_num);
     key.dport = BPF_CORE_READ(sk, __sk_common.skc_dport);
+
+    bpf_trace_printk("sockops BPF_CORE_READ finish\n", sizeof("sockops BPF_CORE_READ finish\n"));
 
     if (op == BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB || op == BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB) {
         bpf_sock_hash_update(skops, &sock_ops_map, &key, BPF_NOEXIST);
