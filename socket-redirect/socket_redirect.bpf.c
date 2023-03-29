@@ -46,6 +46,7 @@ SEC("sk_msg")
 int sendmsg_prog(struct sk_msg_md *msg) {
     struct sock_key key = {};
     struct sock *sk;
+    __u32 key_hash;
 
     key.family = msg->family;
     key.sip4 = msg->local_ip4;
@@ -57,8 +58,10 @@ int sendmsg_prog(struct sk_msg_md *msg) {
     if (!sk)
         return SK_PASS;
 
-    return bpf_sk_redirect_map(msg, &sock_ops_map, BPF_SK_REDIRECT_MAP_GET_HASH(&key), BPF_F_INGRESS);
+    key_hash = (__u32)(unsigned long)&key;
+    return bpf_sk_redirect_map(msg->sk, &sock_ops_map, key_hash, BPF_F_INGRESS);
 }
+
 
 char _license[] SEC("license") = "GPL";
 __u32 _version SEC("version") = 1;
