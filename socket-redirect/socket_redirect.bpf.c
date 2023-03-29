@@ -35,7 +35,7 @@ int sock_map_update(struct bpf_sock_ops *skops) {
         int state = skops->args[0];
 
         if (state == TCP_CLOSE) {
-            bpf_sock_hash_del(&sock_ops_map, &key);
+            bpf_map_delete_elem(&sock_ops_map, &key);
         }
     }
 
