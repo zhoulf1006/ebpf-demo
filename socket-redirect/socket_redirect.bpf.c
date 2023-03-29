@@ -11,14 +11,30 @@ struct {
     __type(value, struct sock *);
 } sock_ops_map SEC(".maps");
 
+struct {
+    __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
+    __uint(key_size, sizeof(__u32));
+    __uint(value_size, sizeof(__u32));
+} perf_event_map SEC(".maps");
+
+static __always_inline void output_connection_info(void *ctx, struct sock_key *key) {
+    struct connection_info conn_info = {};
+    conn_info.sip4 = key->sip4;
+    conn_info.dip4 = key->dip4;
+    conn_info.sport = key->sport;
+    conn_info.dport = key->dport;
+
+    __u32 cpu = bpf_get_smp_processor_id();
+    bpf_perf_event_output(ctx, &perf_event_map, cpu, &conn_info, sizeof(conn_info));
+}
+
 SEC("sockops")
 int sock_map_update(struct bpf_sock_ops *skops) {
     struct sock_key key = {};
     struct sock *sk;
     int op;
 
-    // sk = (struct sock *)skops->sk;
-    sk = BPF_CORE_READ(skops, sk);
+    sk = (struct sock *)skops->sk;
     if (!sk)
         return 0;
 
@@ -32,6 +48,7 @@ int sock_map_update(struct bpf_sock_ops *skops) {
 
     if (op == BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB || op == BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB) {
         bpf_sock_hash_update(skops, &sock_ops_map, &key, BPF_NOEXIST);
+        output_connection_info(skops, &key);
     } else if (op == BPF_SOCK_OPS_STATE_CB) {
         int state = skops->args[0];
 
@@ -43,12 +60,10 @@ int sock_map_update(struct bpf_sock_ops *skops) {
     return 0;
 }
 
-
 SEC("sk_msg")
 int sendmsg_prog(struct sk_msg_md *msg) {
     struct sock_key key = {};
     struct sock *sk;
-    __u32 key_hash;
 
     key.family = msg->family;
     key.sip4 = msg->local_ip4;
@@ -57,12 +72,15 @@ int sendmsg_prog(struct sk_msg_md *msg) {
     key.dport = msg->remote_port;
 
     sk = bpf_map_lookup_elem(&sock_ops_map, &key);
-    if (!sk)
+    if (!sk) {
+        output_connection_info(msg, &key);
         return SK_PASS;
+    }
 
-    key_hash = (__u32)(unsigned long)&key;
-    return bpf_sk_redirect_map((struct __sk_buff *)msg->sk, &sock_ops_map, key_hash, BPF_F_INGRESS);
+    return bpf_sk_redirect_map((struct __sk_buff *)msg->sk, &sock_ops_map, (unsigned long)&key, BPF_F_INGRESS);
 }
+
+char _license[]
 
 char _license[] SEC("license") = "GPL";
 __u32 _version SEC("version") = 1;
