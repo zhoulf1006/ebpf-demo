@@ -106,6 +106,7 @@ int sock_map_update(struct bpf_sock_ops *skops) {
 SEC("sk_msg")
 int sendmsg_prog(struct sk_msg_md *msg) {
     struct sock_key key = {};
+    __u64 flags = BPF_F_INGRESS
     struct sock *sk;
 
     sk_msg_extract4_key(msg, &key);
@@ -117,7 +118,8 @@ int sendmsg_prog(struct sk_msg_md *msg) {
     }
 
     // return bpf_sk_redirect_map((struct __sk_buff *)msg->sk, &sock_ops_map, (unsigned long)&key, BPF_F_INGRESS);
-    return bpf_msg_redirect_hash(msg, &sock_ops_map, &key, BPF_F_INGRESS);
+    bpf_msg_redirect_hash(msg, &sock_ops_map, &key, flags);
+    return SK_PASS;
 }
 
 char _license[] SEC("license") = "GPL";
