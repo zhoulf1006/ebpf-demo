@@ -118,8 +118,7 @@ int sendmsg_prog(struct sk_msg_md *msg) {
     }
 
     // return bpf_sk_redirect_map((struct __sk_buff *)msg->sk, &sock_ops_map, (unsigned long)&key, BPF_F_INGRESS);
-    bpf_msg_redirect_hash(msg, &sock_ops_map, &key, flags);
-    return SK_PASS;
+    return bpf_msg_redirect_hash(msg, &sock_ops_map, &key, flags);
 }
 
 char _license[] SEC("license") = "GPL";
