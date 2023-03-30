@@ -12,12 +12,12 @@ struct sock_key {
     __u32 dport;
 } __attribute__((packed));
 
-struct connection_info {
-    __u32 sip4;
-    __u32 dip4;
-    __u32 family;
-    __u16 sport;
-    __u16 dport;
-};
+// struct connection_info {
+//     __u32 sip4;
+//     __u32 dip4;
+//     __u32 family;
+//     __u16 sport;
+//     __u16 dport;
+// };
 
 #endif // SOCKET_REDIRECT_H

@@ -12,21 +12,21 @@ struct {
     __type(value, struct sock *);
 } sock_ops_map SEC(".maps");
 
-struct {
-    __uint(type, BPF_MAP_TYPE_RINGBUF);
-    __uint(max_entries, 1 << 24);
-} ring_buffer_map SEC(".maps");
+// struct {
+//     __uint(type, BPF_MAP_TYPE_RINGBUF);
+//     __uint(max_entries, 1 << 24);
+// } ring_buffer_map SEC(".maps");
 
-static __always_inline void output_connection_info(void *ctx, struct sock_key *key) {
-    struct connection_info conn_info = {};
-    conn_info.family = key->family;
-    conn_info.sip4 = key->sip4;
-    conn_info.dip4 = key->dip4;
-    conn_info.sport = key->sport;
-    conn_info.dport = key->dport;
+// static __always_inline void output_connection_info(void *ctx, struct sock_key *key) {
+//     struct connection_info conn_info = {};
+//     conn_info.family = key->family;
+//     conn_info.sip4 = key->sip4;
+//     conn_info.dip4 = key->dip4;
+//     conn_info.sport = key->sport;
+//     conn_info.dport = key->dport;
 
-    bpf_ringbuf_output(&ring_buffer_map, &conn_info, sizeof(conn_info), BPF_RB_FORCE_WAKEUP);
-}
+//     bpf_ringbuf_output(&ring_buffer_map, &conn_info, sizeof(conn_info), BPF_RB_FORCE_WAKEUP);
+// }
 
 static __always_inline void sk_extract4_key(const struct bpf_sock_ops *ops,
 					    struct sock_key *key)
@@ -77,13 +77,13 @@ static __always_inline void sk_msg_extract4_key(const struct sk_msg_md *msg,
 SEC("sockops")
 int sock_map_update(struct bpf_sock_ops *skops) {
     struct sock_key key = {};
-    struct sock *sk;
+    // struct sock *sk;
     int op;
 
     // bpf_trace_printk("sockops init finish\n", sizeof("sockops init finish\n"));
-    sk = (struct sock *)skops->sk;
-    if (!sk)
-        return 0;
+    // sk = (struct sock *)skops->sk;
+    // if (!sk)
+    //     return 0;
 
     op = (int)skops->op;
 
@@ -113,7 +113,7 @@ int sendmsg_prog(struct sk_msg_md *msg) {
 
     sk = bpf_map_lookup_elem(&sock_ops_map, &key);
     if (!sk) {
-        output_connection_info(msg, &key);
+        // output_connection_info(msg, &key);
         return SK_PASS;
     }
 
