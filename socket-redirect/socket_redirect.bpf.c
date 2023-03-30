@@ -98,7 +98,7 @@ int sock_map_update(struct bpf_sock_ops *skops) {
 
     bpf_trace_printk("sockops op finish\n", sizeof("sockops op finish\n"));
 
-    sk_extract4_key(skops, &key)
+    sk_extract4_key(skops, &key);
     // key.sip4 = BPF_CORE_READ(sk, __sk_common.skc_rcv_saddr);
     // key.dip4 = BPF_CORE_READ(sk, __sk_common.skc_daddr);
     // key.family = BPF_CORE_READ(sk, __sk_common.skc_family);
