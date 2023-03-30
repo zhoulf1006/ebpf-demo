@@ -106,7 +106,7 @@ int sock_map_update(struct bpf_sock_ops *skops) {
 SEC("sk_msg")
 int sendmsg_prog(struct sk_msg_md *msg) {
     struct sock_key key = {};
-    __u64 flags = BPF_F_INGRESS
+    __u64 flags = BPF_F_INGRESS;
     struct sock *sk;
 
     sk_msg_extract4_key(msg, &key);
