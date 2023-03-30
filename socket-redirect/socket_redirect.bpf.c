@@ -27,6 +27,60 @@ static __always_inline void output_connection_info(void *ctx, struct sock_key *k
     bpf_ringbuf_output(&ring_buffer_map, &conn_info, sizeof(conn_info), BPF_RB_FORCE_WAKEUP);
 }
 
+// static inline void extract_key_from_sock_ops(struct bpf_sock_ops *skops, struct sock_key *key)
+// {
+//     key->family = BPF_CORE_READ(skops->sk, __sk_common.skc_family);
+//     key->sip4 = BPF_CORE_READ(skops->sk, __sk_common.skc_rcv_saddr);
+//     key->dip4 = BPF_CORE_READ(skops->sk, __sk_common.skc_daddr);
+//     key->sport = BPF_CORE_READ(skops->sk, __sk_common.skc_num);
+//     key->dport = BPF_CORE_READ(skops->sk, __sk_common.skc_dport);
+
+//     // 清除填充字段
+//     key->pad1 = 0;
+//     key->pad2 = 0;
+//     key->pad3 = 0;
+// }
+
+static __always_inline void sk_extract4_key(const struct bpf_sock_ops *ops,
+					    struct sock_key *key)
+{
+	key->dip4 = ops->remote_ip4;
+	key->sip4 = ops->local_ip4;
+	key->family = 1;
+
+	key->sport = (bpf_ntohl(ops->local_port) >> 16);
+	/* clang-7.1 or higher seems to think it can do a 16-bit read here
+	 * which unfortunately most kernels (as of October 2019) do not
+	 * support, which leads to verifier failures. Insert a READ_ONCE
+	 * to make sure that a 32-bit read followed by shift is generated.
+	 */
+	key->dport = READ_ONCE(ops->remote_port) >> 16;
+
+    key->pad1 = 0;
+    key->pad2 = 0;
+    key->pad3 = 0;
+}
+
+static __always_inline void sk_msg_extract4_key(const struct sk_msg_md *msg,
+						struct sock_key *key)
+{
+	key->dip4 = msg->remote_ip4;
+	key->sip4 = msg->local_ip4;
+	key->family = 1;
+
+	key->sport = (bpf_ntohl(msg->local_port) >> 16);
+	/* clang-7.1 or higher seems to think it can do a 16-bit read here
+	 * which unfortunately most kernels (as of October 2019) do not
+	 * support, which leads to verifier failures. Insert a READ_ONCE
+	 * to make sure that a 32-bit read followed by shift is generated.
+	 */
+	key->dport = READ_ONCE(msg->remote_port) >> 16;
+
+    key->pad1 = 0;
+    key->pad2 = 0;
+    key->pad3 = 0;
+}
+
 SEC("sockops")
 int sock_map_update(struct bpf_sock_ops *skops) {
     struct sock_key key = {};
@@ -44,9 +98,10 @@ int sock_map_update(struct bpf_sock_ops *skops) {
 
     bpf_trace_printk("sockops op finish\n", sizeof("sockops op finish\n"));
 
-    // key.family = BPF_CORE_READ(sk, __sk_common.skc_family);
+    sk_extract4_key(skops, &key)
     // key.sip4 = BPF_CORE_READ(sk, __sk_common.skc_rcv_saddr);
     // key.dip4 = BPF_CORE_READ(sk, __sk_common.skc_daddr);
+    // key.family = BPF_CORE_READ(sk, __sk_common.skc_family);
     // key.sport = BPF_CORE_READ(sk, __sk_common.skc_num);
     // key.dport = BPF_CORE_READ(sk, __sk_common.skc_dport);
 
@@ -77,11 +132,13 @@ int sendmsg_prog(struct sk_msg_md *msg) {
     struct sock_key key = {};
     struct sock *sk;
 
-    key.family = msg->family;
-    key.sip4 = msg->local_ip4;
-    key.sport = msg->local_port;
-    key.dip4 = msg->remote_ip4;
-    key.dport = msg->remote_port;
+    // key.family = msg->family;
+    // key.sip4 = msg->local_ip4;
+    // key.sport = msg->local_port;
+    // key.dip4 = msg->remote_ip4;
+    // key.dport = msg->remote_port;
+
+    sk_msg_extract4_key(msg, &key);
 
     sk = bpf_map_lookup_elem(&sock_ops_map, &key);
     if (!sk) {
