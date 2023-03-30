@@ -45,6 +45,7 @@ static __always_inline void output_connection_info(void *ctx, struct sock_key *k
 static __always_inline void sk_extract4_key(const struct bpf_sock_ops *ops,
 					    struct sock_key *key)
 {
+    __u32 remote_port;
 	key->dip4 = ops->remote_ip4;
 	key->sip4 = ops->local_ip4;
 	key->family = 1;
@@ -55,7 +56,9 @@ static __always_inline void sk_extract4_key(const struct bpf_sock_ops *ops,
 	 * support, which leads to verifier failures. Insert a READ_ONCE
 	 * to make sure that a 32-bit read followed by shift is generated.
 	 */
-	key->dport = READ_ONCE(ops->remote_port) >> 16;
+	// key->dport = READ_ONCE(ops->remote_port) >> 16;
+    bpf_probe_read_kernel(&remote_port, sizeof(remote_port), &ops->remote_port);
+	key->dport = remote_port >> 16;
 
     key->pad1 = 0;
     key->pad2 = 0;
@@ -65,6 +68,7 @@ static __always_inline void sk_extract4_key(const struct bpf_sock_ops *ops,
 static __always_inline void sk_msg_extract4_key(const struct sk_msg_md *msg,
 						struct sock_key *key)
 {
+    __u32 remote_port;
 	key->dip4 = msg->remote_ip4;
 	key->sip4 = msg->local_ip4;
 	key->family = 1;
@@ -75,7 +79,9 @@ static __always_inline void sk_msg_extract4_key(const struct sk_msg_md *msg,
 	 * support, which leads to verifier failures. Insert a READ_ONCE
 	 * to make sure that a 32-bit read followed by shift is generated.
 	 */
-	key->dport = READ_ONCE(msg->remote_port) >> 16;
+	// key->dport = READ_ONCE(msg->remote_port) >> 16;
+	bpf_probe_read_kernel(&remote_port, sizeof(remote_port), &msg->remote_port);
+	key->dport = remote_port >> 16;
 
     key->pad1 = 0;
     key->pad2 = 0;
